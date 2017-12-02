@@ -7,12 +7,13 @@
 # 4 bytes, 4 bytes, 1 byte, 1 bytes, 1 bytes, 1 bytes
 # Size of the structure: 12 bytes
 
-# $s4 - address to 1. verticle
-# $s5 - address to 2. verticle
-# $s6 - address to 3. verticle
+# $t1 - address to 1. verticle
+# $t2 - address to 2. verticle
+# $t3 - address to 3. verticle
 
 
 .data
+# Header without first 2 bytes "BM"
 header:		.space	68
 
 # Space for 3 verticles
@@ -23,7 +24,7 @@ bitmap:		.ascii "BM"
 input_file:	.asciiz	"input.bmp"
 output_file:	.asciiz	"output.bmp"
 
-prompt1:	.asciiz	"Bitmap properties:\nAmount of pixels: "
+prompt1:	.asciiz	"Bitmap properties:\nAmount of pixels*4: "
 prompt2:	.asciiz	"\nWidth in pixels: "
 prompt3:	.asciiz "\nHeight in pixels: "
 error:		.asciiz "Cannot open BMP file"
@@ -36,6 +37,7 @@ prompt6:	.asciiz "\nEnter the data of the 3. verticle:\n(format: [X][Y][A][R][G]
 .globl	main
 
 main:
+	
 	# opening the bitmap file (input_file)
 	li	$v0, 13
 	la	$a0, input_file
@@ -65,7 +67,7 @@ main:
 	
 	# printing bitmap properties
 	
-	# print data offset
+	# print amount of pixels*4
 	li	$v0, 4	# print string
 	la	$a0, prompt1
 	syscall
@@ -95,6 +97,13 @@ main:
 	syscall
 	move	$s0, $v0 # save address of allocated memory
 	
+	# load pixels from bitmap
+	
+	li	$v0, 14
+	move	$a0, $s6
+	la	$a1, ($s0)
+	move	$a2, $s1 # pixels*4 bytes
+	syscall
 	
 	# closing file (input_file)
 	li	$v0, 16
@@ -212,6 +221,69 @@ main:
 	syscall
 	sb	$v0, verticles+35
 	
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#
+# $s1, $s2, $s3, $s6, $s0
+#
+# $s1 - size of data sector (pixels*4) in bytes
+# $s2 - width in pixels
+# $s3 - height in pixels
+# $s6 - file descriptor
+#
+# $s0 - address of pixels data (on the heap)
+#
+# VERTICLE (12 bytes)
+# [X   ][Y   ][A][R][G][B]
+# 4 bytes, 4 bytes, 1 byte, 1 bytes, 1 bytes, 1 bytes
+#
+# $t1 - address to 1. verticle // after sorting it is the verticle with the lowest "y"
+# $t2 - address to 2. verticle
+# $t3 - address to 3. verticle // after sorting it is the verticle with the highest "y"
+#
+
+# sorting verticles from lowest to highest (according to the Y axis)
+sort:
+	la	$t1, verticles
+	la	$t2, verticles+12
+	la	$t3, verticles+24
+	
+check_t1_t2:
+	lw	$t4, 4($t1)
+	lw	$t5, 4($t2)
+	
+	bgt	$t5, $t4, check_t1_t3	# t2 > t1 -> skip the switching t1 with t2
+	move	$t0, $t1
+	move	$t1, $t2
+	move	$t2, $t0 
+check_t1_t3:
+	lw	$t4, 4($t1)
+	lw	$t5, 4($t3)
+	
+	bgt	$t3, $t1, check_t2_t3	# t3 > t1 -> skip the switching t1 with t3
+	move	$t0, $t1
+	move	$t1, $t3
+	move	$t3, $t0
+check_t2_t3:
+	lw	$t4, 4($t2)
+	lw	$t5, 4($t3)
+
+	bgt	$t5, $t4, begin_of_drawing	# t3 > t2 -> skip the switching t2 with t3
+	move	$t0, $t2
+	move	$t2, $t3
+	move	$t3, $t0
+
+begin_of_drawing:
+	
+between_y1_y2:
+	
+between_y2_y3:
+
+end_of_drawing:
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
+	
 save:
 	# writing into file (creating file if such doesn't exist
 	li	$v0, 13
@@ -224,7 +296,7 @@ save:
 	# first 2 bytes "BM"
 	li	$v0, 15
 	move	$a0, $s6
-	la	$a1, bitmap
+	la	$a1, bitmap # Can be replaced by "li $a1, some_number"
 	li	$a2, 2
 	syscall
 	
