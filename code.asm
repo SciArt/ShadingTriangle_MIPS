@@ -19,6 +19,9 @@ header:		.space	68
 # Space for 3 verticles
 verticles:	.space	36
 
+# Space for dx_b, dx_e, dl_b, dl_e
+diff_ratio:	.space	16
+
 bitmap:		.ascii "BM"
 
 input_file:	.asciiz	"input.bmp"
@@ -229,7 +232,7 @@ main:
 # $s1 - size of data sector (pixels*4) in bytes
 # $s2 - width in pixels
 # $s3 - height in pixels
-# $s6 - file descriptor
+# $s6 - file descriptor 	but file is closed so I can use $s6
 #
 # $s0 - address of pixels data (on the heap)
 #
@@ -241,6 +244,9 @@ main:
 # $t2 - address to 2. verticle
 # $t3 - address to 3. verticle // after sorting it is the verticle with the highest "y"
 #
+# diff_ratio (16 bytes)
+# each 4 bytes 
+# [dx_b] [dx_e] [dl_b] [dl_e]
 
 # sorting verticles from lowest to highest (according to the Y axis)
 sort:
@@ -272,13 +278,105 @@ check_t2_t3:
 	move	$t0, $t2
 	move	$t2, $t3
 	move	$t3, $t0
-
-begin_of_drawing:
 	
+	#Check sorting
+	#li	$v0, 1
+	#lw	$t0, 4($t1)
+	#la	$a0, ($t0)
+	#syscall
+	#
+	#li	$v0, 1
+	#lw	$t0, 4($t2)
+	#la	$a0, ($t0)
+	#syscall
+	#
+	#li	$v0, 1
+	#lw	$t0, 4($t3)
+	#la	$a0, ($t0)
+	#syscall
+begin_of_drawing:
+
+# $s4 - current x
+# $s5 - current y
+
 between_y1_y2:
+	# If y1 == y3 -> jump to end_of_drawing
+	lw	$t4, 4($t1) # y1
+	lw	$t5, 4($t3) # y3
+	beq	$t4, $t5, end_of_drawing
+	
+	# Calculating dx13 (current dx_b)
+	subu	$t6, $t5, $t4	# y3 - y1
+	
+	lw	$t4, ($t1) # x1
+	lw	$t5, ($t3) # x3
+	subu	$t7, $t5, $t4	# x3 - x1
+	
+	sll	$t7, $t7, 16	# Shift (x3-x1) by 16 bits
+	div	$t0, $t7, $t6	# (x3-x1)/(y3-y1)
+	sw	$t0, diff_ratio # save calculations	
+	
+	lw	$t4, 4($t1) # y1
+	move	$s4, $t4 # y = y1
+	
+	# If y1 == y2 -> jump to between_y2_y3
+	#lw	$t4, 4($t1) # $t4 is already setted to y1
+	lw	$t5, 4($t2) # y2
+	beq	$t4, $t5, between_y2_y3
+	
+	# Calculating dx12 (current dx_e)
+	subu	$t6, $t5, $t4	# y2 - y1
+	
+	lw	$t4, ($t1) # x1
+	lw	$t5, ($t2) # x2
+	subu	$t7, $t5, $t4 # x2 - x1
+	
+	sll	$t7, $t7, 16	# Shift (x2 - x1) by 16 bits
+	div	$t0, $7, $t6	# (x2 - x1) / (y2 - y1)
+	sw	$t0, diff_ratio+4 # save calculations
+
+drawing_lines_between_y1_y2:
+
+	# @@@@@@
+	# rysowanie linii
+	# @@@@@@
+	
+	addiu	$s5, $s5, 1 # y = y + 1
+	
+	# If y <= y2 -> jump to "drawing_lines_between_y1_y2"
+	lw	$t0, 4($t2) # y2
+	ble	$s5, $t0, drawing_lines_between_y1_y2
+		
 	
 between_y2_y3:
+	# If y2 == y3 -> jump to end_of_drawing
+	lw	$t4, 4($t2) # y2
+	lw	$t5, 4($t3) # y3
+	beq	$t4, $t5, end_of_drawing
+	
+	# Calculating dx23 (current dx_e)
+	subu	$t6, $t5, $t4	# y3 - y2
+	
+	lw	$t4, ($t2) # x2
+	lw	$t5, ($t3) # x3
+	subu	$t7, $t5, $t4	# x3 - x2
+	
+	sll	$t7, $t7, 16	# Shift (x3-x2) by 16 bits
+	div	$t0, $t7, $t6	# (x3-x2)/(y3-y2)
+	sw	$t0, diff_ratio # save calculations
+	
+drawing_lines_between_y2_y3:
 
+	# @@@@@@
+	# rysowanie linii
+	# @@@@@@
+	
+	addiu	$s5, $s5, 1 # y = y + 1
+	
+	# If y <= y3 -> jump to "drawing_lines_between_y2_y3"
+	lw	$t0, 4($t3) # y3
+	ble	$s5, $t0, drawing_lines_between_y2_y3
+	
 end_of_drawing:
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
