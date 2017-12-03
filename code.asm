@@ -229,10 +229,10 @@ main:
 #
 # $s1, $s2, $s3, $s6, $s0
 #
-# $s1 - size of data sector (pixels*4) in bytes
+# $s1 - size of data sector (pixels*4) in bytes  @@@@@ Don't need it
 # $s2 - width in pixels
 # $s3 - height in pixels
-# $s6 - file descriptor 	but file is closed so I can use $s6
+# $s6 - file descriptor 	but file is closed so I can use it
 #
 # $s0 - address of pixels data (on the heap)
 #
@@ -298,6 +298,11 @@ begin_of_drawing:
 
 # $s4 - current x
 # $s5 - current y
+# $s6 - x_b ... x_begin, but it is more like x13
+# $s7 - x_e ... x_end, but it is more like x12 or x23
+
+# $t8 - lower of the x_b and x_e while drawing single line
+# $t9 - bigger of the x_b and x_e while drawing single line
 
 between_y1_y2:
 	# If y1 == y3 -> jump to end_of_drawing
@@ -314,10 +319,15 @@ between_y1_y2:
 	
 	sll	$t7, $t7, 16	# Shift (x3-x1) by 16 bits
 	div	$t0, $t7, $t6	# (x3-x1)/(y3-y1)
-	sw	$t0, diff_ratio # save calculations	
+	sw	$t0, diff_ratio # save calculations, dx_b	
+	
+	lw	$t4, ($t1) # x1
+	sll	$s4, $t4, 16 # x = x1 and shifted by 16
+	sll	$s6, $t4, 16 # x_b = x1 and shifted by 16
+	sll	$s7, $t4, 16 # x_e = x1 and shifted by 16
 	
 	lw	$t4, 4($t1) # y1
-	move	$s4, $t4 # y = y1
+	move	$s5, $t4 # y = y1
 	
 	# If y1 == y2 -> jump to between_y2_y3
 	#lw	$t4, 4($t1) # $t4 is already setted to y1
@@ -333,19 +343,66 @@ between_y1_y2:
 	
 	sll	$t7, $t7, 16	# Shift (x2 - x1) by 16 bits
 	div	$t0, $7, $t6	# (x2 - x1) / (y2 - y1)
-	sw	$t0, diff_ratio+4 # save calculations
-
+	sw	$t0, diff_ratio+4 # save calculations, dx_e
+	
+	# x = x_b = x_e = x1 and y = y1 - it is already setted
 drawing_lines_between_y1_y2:
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
+	# $t8 is the lower one of the $s6 and $s7
+	# $t9 is the bigger one of the $s6 and $s7
+	# removing shift by shifting to the right by 16
+	sra	$t8, $s6, 16 
+	sra	$t9, $s7, 16
+	ble	$s6, $s7, skip_switch_in_y1_y2
+	sra	$t8, $s7, 16
+	sra	$t9, $s6, 16
+	
+skip_switch_in_y1_y2:
+	move	$s4, $t8 # x = lower of the x_b and x_e
+	
+single_line_between_y1_y2:
+	
+	# @@@@@@@@@@@@@@@
+	# ZAPIS PIKSELA DO PAMIĘCI NA STOSIE
+	
+	mul	$t0, $s5, $s2	# y * width	
+	add	$t0, $t0, $s4	# y * width + x
+	sll	$t0, $t0, 2	# 4*(y*width + x)
+	
+	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
+	li	$t7, 0		# TEMPORARY FOR BLACK COLOR
+	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
+	
+	addu	$t0, $s0, $t0
+	 
+	sb	$t7, ($t0)	# A
+	sb	$t7, 1($t0)	# R
+	sb	$t7, 2($t0)	# G
+	sb	$t7, 3($t0)	# B
+	
+	# @@@@@@@@@@@@@@@
+	
+	addiu	$s4, $s4, 1 # x = x + 1
+	
+	# if x <= bigger of the x_b and x_e
+	ble	$s4, $t9, single_line_between_y2_y3
+	
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-	# @@@@@@
-	# rysowanie linii
-	# @@@@@@
+	# x_b = x_b + dx13
+	lw	$t0, diff_ratio
+	add	$s6, $s6, $t0
+	
+	# x_e = x_e + dx12
+	lw	$t0, diff_ratio+4
+	add	$s7, $s7, $t0
 	
 	addiu	$s5, $s5, 1 # y = y + 1
 	
 	# If y <= y2 -> jump to "drawing_lines_between_y1_y2"
 	lw	$t0, 4($t2) # y2
-	ble	$s5, $t0, drawing_lines_between_y1_y2
+	blt	$s5, $t0, drawing_lines_between_y1_y2
 		
 	
 between_y2_y3:
@@ -353,6 +410,10 @@ between_y2_y3:
 	lw	$t4, 4($t2) # y2
 	lw	$t5, 4($t3) # y3
 	beq	$t4, $t5, end_of_drawing
+	
+	# x_b = x_b - d_x13	
+	lw	$t0, diff_ratio
+	sub	$s6, $s6, $t0
 	
 	# Calculating dx23 (current dx_e)
 	subu	$t6, $t5, $t4	# y3 - y2
@@ -363,22 +424,75 @@ between_y2_y3:
 	
 	sll	$t7, $t7, 16	# Shift (x3-x2) by 16 bits
 	div	$t0, $t7, $t6	# (x3-x2)/(y3-y2)
-	sw	$t0, diff_ratio # save calculations
+	sw	$t0, diff_ratio+4 # save calculations, dx_e
 	
+
+	sll	$s7, $t4, 16	# x_e = x2 and shifted by 16
+		
 drawing_lines_between_y2_y3:
 
-	# @@@@@@
-	# rysowanie linii
-	# @@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
+	# $t8 is the lower one of the $s6 and $s7
+	# $t9 is the bigger one of the $s6 and $s7
+	# removing shift by shifting to the right by 16
+	sra	$t8, $s6, 16 
+	sra	$t9, $s7, 16
+	ble	$s6, $s7, skip_switch_in_y2_y3
+	sra	$t8, $s7, 16
+	sra	$t9, $s6, 16
+
+skip_switch_in_y2_y3:
+	move	$s4, $t8 # x = lower of the x_b and x_e
+	
+single_line_between_y2_y3:	
+	
+	# @@@@@@@@@@@@@@@
+	# ZAPIS PIKSELA DO PAMIĘCI NA STOSIE
+	
+	mul	$t0, $s5, $s2	# y * width	
+	add	$t0, $t0, $s4	# y * width + x
+	sll	$t0, $t0, 2	# 4*(y*width + x)
+	
+	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
+	li	$t7, 0		# TEMPORARY FOR BLACK COLOR
+	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
+	
+	addu	$t0, $s0, $t0
+	 
+	sb	$t7, ($t0)	# A
+	sb	$t7, 1($t0)	# R
+	sb	$t7, 2($t0)	# G
+	sb	$t7, 3($t0)	# B
+	
+	# @@@@@@@@@@@@@@@
+	
+	addiu	$s4, $s4, 1 # x = x + 1
+	
+	# if x <= bigger of the x_b and x_e
+	ble	$s4, $t9, single_line_between_y2_y3
+	
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
+	# x_b = x_b + dx13
+	lw	$t0, diff_ratio
+	add	$s6, $s6, $t0
+	
+	# x_e = x_e + dx23
+	lw	$t0, diff_ratio+4
+	add	$s7, $s7, $t0
 	
 	addiu	$s5, $s5, 1 # y = y + 1
 	
 	# If y <= y3 -> jump to "drawing_lines_between_y2_y3"
 	lw	$t0, 4($t3) # y3
-	ble	$s5, $t0, drawing_lines_between_y2_y3
+	blt	$s5, $t0, drawing_lines_between_y2_y3
 	
 end_of_drawing:
-
+	# @@@@@@
+	# rysowanie linii ostatniej
+	# @@@@@@
+	
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
 	
