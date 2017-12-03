@@ -266,7 +266,7 @@ check_t1_t3:
 	lw	$t4, 4($t1)
 	lw	$t5, 4($t3)
 	
-	bgt	$t3, $t1, check_t2_t3	# t3 > t1 -> skip the switching t1 with t3
+	bgt	$t5, $t4, check_t2_t3	# t3 > t1 -> skip the switching t1 with t3
 	move	$t0, $t1
 	move	$t1, $t3
 	move	$t3, $t0
@@ -280,20 +280,20 @@ check_t2_t3:
 	move	$t3, $t0
 	
 	#Check sorting
-	#li	$v0, 1
-	#lw	$t0, 4($t1)
-	#la	$a0, ($t0)
-	#syscall
-	#
-	#li	$v0, 1
-	#lw	$t0, 4($t2)
-	#la	$a0, ($t0)
-	#syscall
-	#
-	#li	$v0, 1
-	#lw	$t0, 4($t3)
-	#la	$a0, ($t0)
-	#syscall
+	li	$v0, 1
+	lw	$t0, 4($t1)
+	la	$a0, ($t0)
+	syscall
+	
+	li	$v0, 1
+	lw	$t0, 4($t2)
+	la	$a0, ($t0)
+	syscall
+	
+	li	$v0, 1
+	lw	$t0, 4($t3)
+	la	$a0, ($t0)
+	syscall
 begin_of_drawing:
 
 # $s4 - current x
