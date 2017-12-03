@@ -19,8 +19,29 @@ header:		.space	68
 # Space for 3 verticles
 verticles:	.space	36
 
-# Space for dx_b, dx_e, dl_b, dl_e
-diff_ratio:	.space	16
+# Space for dx_b, dx_e
+diff_ratio:	.space	8
+
+# Space for color shading informations
+# Very similar to the dx_b, dx_e, but not for coords
+l_A_p:		.space	4
+l_R_p:		.space	4
+l_G_p:		.space	4
+l_B_p:		.space	4
+l_A_e:		.space	4
+l_R_e:		.space	4
+l_G_e:		.space	4
+l_B_e:		.space	4
+
+# Space for color value (left and right side of horizontal line)
+c_A_p:		.space	4
+c_R_p:		.space	4
+c_G_p:		.space	4
+c_B_p:		.space	4
+c_A_e:		.space	4
+c_R_e:		.space	4
+c_G_e:		.space	4
+c_B_e:		.space	4
 
 bitmap:		.ascii "BM"
 
@@ -311,11 +332,11 @@ between_y1_y2:
 	beq	$t4, $t5, end_of_drawing
 	
 	# Calculating dx13 (current dx_b)
-	subu	$t6, $t5, $t4	# y3 - y1
+	sub	$t6, $t5, $t4	# y3 - y1
 	
 	lw	$t4, ($t1) # x1
 	lw	$t5, ($t3) # x3
-	subu	$t7, $t5, $t4	# x3 - x1
+	sub	$t7, $t5, $t4	# x3 - x1
 	
 	sll	$t7, $t7, 16	# Shift (x3-x1) by 16 bits
 	div	$t0, $t7, $t6	# (x3-x1)/(y3-y1)
@@ -326,6 +347,44 @@ between_y1_y2:
 	sll	$s6, $t4, 16 # x_b = x1 and shifted by 16
 	sll	$s7, $t4, 16 # x_e = x1 and shifted by 16
 	
+	# @@@@@@@@@@@@@@@@@@@@ CALCULATING COLOR DIFFERENCES l_*_p, l_A_p etc @@@@@@@@@@@@@@@
+	
+	# We have got a (y3 - y1), so we need just (A3 - A1), (R3 - R1), (G3 - G1), (B3 - B1)
+	# I am not sure if (y3 - y1) survived the dividing :(
+	
+	# For [A]lpha:
+	
+	# For [R]ed:
+	
+	lb	$t4, 9($t1) # R1
+	lb	$t5, 9($t3) # R3
+	sub	$t7, $t5, $t4	# R3 - R1
+	
+	sll	$t7, $t7, 16	# Shift (R3-R1) by 16 bits
+	div	$t0, $t7, $t6	# (R3-R1)/(y3-y1)
+	sw	$t0, l_R_p
+	
+	# For [G]reen:
+	
+	# For [B]lue:	
+	
+	# @@@@@@@@@@@@@@@@@@@@ END OF CALCULATING COLOR DIFFERENCES @@@@@@@@@@@@@@@@@@@@@@@@
+	# @@@@@@@@@@@@@@@@@@@ COLOR c_*_p and c_*_e 
+	
+	# A
+	
+	# R
+	lb	$t0, 9($t1)
+	sll	$t0, $t0, 16
+	sw	$t0, c_R_p
+	sw	$t0, c_R_e
+	
+	# G
+	
+	# B
+	
+	# @@@@@@@@@@@@@@@@@@@ END OF COLOR c_*_p and c_*_e
+	
 	lw	$t4, 4($t1) # y1
 	move	$s5, $t4 # y = y1
 	
@@ -335,19 +394,51 @@ between_y1_y2:
 	beq	$t4, $t5, between_y2_y3
 	
 	# Calculating dx12 (current dx_e)
-	subu	$t6, $t5, $t4	# y2 - y1
+	sub	$t6, $t5, $t4	# y2 - y1
 	
 	lw	$t4, ($t1) # x1
 	lw	$t5, ($t2) # x2
-	subu	$t7, $t5, $t4 # x2 - x1
+	sub	$t7, $t5, $t4 # x2 - x1
 	
 	sll	$t7, $t7, 16	# Shift (x2 - x1) by 16 bits
 	div	$t0, $t7, $t6	# (x2 - x1) / (y2 - y1)
 	sw	$t0, diff_ratio+4 # save calculations, dx_e
 	
+	# @@@@@@@@@@@@@@@@@@@@ CALCULATING COLOR DIFFERENCES l_*_e, l_A_e etc @@@@@@@@@@@@@@@
+	
+	# We have got a (y2 - y1), so we need just (A3 - A1), (R3 - R1), (G3 - G1), (B3 - B1)
+	# I am not sure if (y2 - y1) survived the dividing :(
+	
+	# For [A]lpha:
+	
+	# For [R]ed:
+	
+	lb	$t4, 9($t1) # R1
+	lb	$t5, 9($t2) # R2
+	sub	$t7, $t5, $t4	# R2 - R1
+	
+	sll	$t7, $t7, 16	# Shift (R2-R1) by 16 bits
+	div	$t0, $t7, $t6	# (R2-R1)/(y2-y1)
+	sw	$t0, l_R_p
+	
+	# For [G]reen:
+	
+	# For [B]lue:
+	
+	# @@@@@@@@@@@@@@@@@@@@ END OF CALCULATING COLOR DIFFERENCES @@@@@@@@@@@@@@@@@@@@@@@@	
+	
 	# x = x_b = x_e = x1 and y = y1 - it is already setted
 drawing_lines_between_y1_y2:
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
+	#sub	$t0, $s7, $s6 # x_e - x_b
+	#sra	$t0, $t0, 16
+	#li	$t4, 1
+	#sll	$t4, $t4, 16
+	
+	#div	$t6, $t4, $t0 # 1 / (x_e - x_b)
+
+	# $t6 = 1 / (x_e - x_b)
 	# $t8 is the lower one of the $s6 and $s7
 	# $t9 is the bigger one of the $s6 and $s7
 	# removing shift by shifting to the right by 16
@@ -361,6 +452,19 @@ skip_switch_in_y1_y2:
 	move	$s4, $t8 # x = lower of the x_b and x_e
 	
 single_line_between_y1_y2:
+	
+	# Calculating color
+	
+	# A
+	
+	# R
+	
+	
+	# G
+	
+	# B
+	
+		
 	
 	# @@@@@@@@@@@@@@@
 	# ZAPIS PIKSELA DO PAMIĘCI NA STOSIE
@@ -401,6 +505,27 @@ single_line_between_y1_y2:
 	lw	$t0, diff_ratio+4
 	add	$s7, $s7, $t0
 	
+	# @@@@@@@ CALCULATING COLORS
+		
+	# A
+	
+	# R
+	lw	$t0, l_R_p
+	lw	$t7, c_R_p
+	add	$t7, $t7, $t0
+	sw	$t7, c_R_p
+	
+	lw	$t0, l_R_e
+	lw	$t7, c_R_e
+	add	$t7, $t7, $t0
+	sw	$t7, c_R_e
+	
+	# G
+	
+	# B
+	
+	# @@@@@@@ END OF CALCULATING COLORS
+	
 	addiu	$s5, $s5, 1 # y = y + 1
 	
 	# If y <= y2 -> jump to "drawing_lines_between_y1_y2"
@@ -414,16 +539,16 @@ between_y2_y3:
 	lw	$t5, 4($t3) # y3
 	beq	$t4, $t5, end_of_drawing
 	
-	# x_b = x_b - d_x13	
+	# x_b = x_b - d_x13 # I should do the same for color	
 	lw	$t0, diff_ratio
 	sub	$s6, $s6, $t0
 	
 	# Calculating dx23 (current dx_e)
-	subu	$t6, $t5, $t4	# y3 - y2
+	sub	$t6, $t5, $t4	# y3 - y2
 	
 	lw	$t4, ($t2) # x2
 	lw	$t5, ($t3) # x3
-	subu	$t7, $t5, $t4	# x3 - x2
+	sub	$t7, $t5, $t4	# x3 - x2
 	
 	sll	$t7, $t7, 16	# Shift (x3-x2) by 16 bits
 	div	$t0, $t7, $t6	# (x3-x2)/(y3-y2)
@@ -431,6 +556,43 @@ between_y2_y3:
 	
 
 	sll	$s7, $t4, 16	# x_e = x2 and shifted by 16
+	
+	# @@@@@@@@@@@@@@@@@@@@ CALCULATING COLOR DIFFERENCES l_*_e, l_A_e etc @@@@@@@@@@@@@@@
+	
+	# We have got a (y3 - y2), so we need just (A3 - A1), (R3 - R1), (G3 - G1), (B3 - B1)
+	# I am not sure if (y3 - y2) survived the dividing :(
+	
+	# For [A]lpha:
+	
+	# For [R]ed:
+	
+	lb	$t4, 9($t2) # R2
+	lb	$t5, 9($t3) # R3
+	sub	$t7, $t5, $t4	# R3 - R2
+	
+	sll	$t7, $t7, 16	# Shift (R3-R2) by 16 bits
+	div	$t0, $t7, $t6	# (R3-R2)/(y3-y2)
+	sw	$t0, l_R_e
+	
+	# For [G]reen:
+	
+	# For [B]lue:
+	
+	# @@@@@@@@@@@@@@@@@@@@ END OF CALCULATING COLOR DIFFERENCES @@@@@@@@@@@@@@@@@@@@@@@@
+	# @@@@@@@@@@@@@@@@@@@@ c_*_e @@@@@@@@@@@@@@@@@
+	
+	# A
+	
+	# R
+	lb	$t0, 9($t2)
+	sll	$t0, $t0, 16
+	sw	$t0, c_R_e
+	
+	# G
+	
+	# B
+	
+	# @@@@@@@@@@@@@@@@@@@@ end of c_*e @@@@@@@@@@@
 		
 drawing_lines_between_y2_y3:
 
@@ -489,6 +651,25 @@ single_line_between_y2_y3:
 	lw	$t0, diff_ratio+4
 	add	$s7, $s7, $t0
 	
+	# @@@@@@@ CALCULATING COLORS
+		
+	# A
+	
+	# R
+	lw	$t0, l_R_p
+	lw	$t7, c_R_p
+	add	$t7, $t7, $t0
+	
+	lw	$t0, l_R_e
+	lw	$t7, c_R_e
+	add	$t7, $t7, $t0
+	
+	# G
+	
+	# B
+	
+	# @@@@@@@ END OF CALCULATING COLORS
+	
 	addiu	$s5, $s5, 1 # y = y + 1
 	
 	# If y <= y3 -> jump to "drawing_lines_between_y2_y3"
@@ -496,10 +677,55 @@ single_line_between_y2_y3:
 	blt	$s5, $t0, drawing_lines_between_y2_y3
 	
 end_of_drawing:
-	# @@@@@@
-	# rysowanie linii ostatniej
-	# @@@@@@
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@ OSTATNIA LINIJKA @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+	# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
+	# $t8 is the lower one of the $s6 and $s7
+	# $t9 is the bigger one of the $s6 and $s7
+	# removing shift by shifting to the right by 16
+	sra	$t8, $s6, 16 
+	sra	$t9, $s7, 16
+	ble	$s6, $s7, skip_switch_in_end
+	sra	$t8, $s7, 16
+	sra	$t9, $s6, 16
+
+skip_switch_in_end:
+	move	$s4, $t8 # x = lower of the x_b and x_e
+	
+single_line_end:	
+	
+	# @@@@@@@@@@@@@@@
+	# ZAPIS PIKSELA DO PAMIĘCI NA STOSIE
+	
+	mul	$t0, $s5, $s2	# y * width	
+	add	$t0, $t0, $s4	# y * width + x
+	sll	$t0, $t0, 2	# 4*(y*width + x)
+	
+	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
+	li	$t7, 0		# TEMPORARY FOR BLACK COLOR
+	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
+	
+	addu	$t0, $s0, $t0
+	 
+	#sb	$t7, ($t0)	# A
+	sb	$t7, 1($t0)	# R
+	sb	$t7, 2($t0)	# G
+	#sb	$t7, 3($t0)	# B
+	
+	li	$t7, 255
+	sb	$t7, ($t0)
+	sb	$t7, 3($t0)
+
+	# @@@@@@@@@@@@@@@
+	
+	addiu	$s4, $s4, 1 # x = x + 1
+	
+	# if x <= bigger of the x_b and x_e
+	ble	$s4, $t9, single_line_end
+# @@@@@@@@@@@@@@@@@@@@@@@ KONIEC RYSOWANIA OSTATNIEJ LINIJKI @@@@@@@@@@@@@@@
+
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
 	
