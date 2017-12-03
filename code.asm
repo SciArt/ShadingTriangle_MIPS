@@ -342,13 +342,12 @@ between_y1_y2:
 	subu	$t7, $t5, $t4 # x2 - x1
 	
 	sll	$t7, $t7, 16	# Shift (x2 - x1) by 16 bits
-	div	$t0, $7, $t6	# (x2 - x1) / (y2 - y1)
+	div	$t0, $t7, $t6	# (x2 - x1) / (y2 - y1)
 	sw	$t0, diff_ratio+4 # save calculations, dx_e
 	
 	# x = x_b = x_e = x1 and y = y1 - it is already setted
 drawing_lines_between_y1_y2:
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	
 	# $t8 is the lower one of the $s6 and $s7
 	# $t9 is the bigger one of the $s6 and $s7
 	# removing shift by shifting to the right by 16
@@ -375,18 +374,22 @@ single_line_between_y1_y2:
 	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
 	
 	addu	$t0, $s0, $t0
-	 
-	sb	$t7, ($t0)	# A
+	
+	#sb	$t7, ($t0)	# A
 	sb	$t7, 1($t0)	# R
-	sb	$t7, 2($t0)	# G
+	#sb	$t7, 2($t0)	# G
 	sb	$t7, 3($t0)	# B
+	
+	li	$t7, 255
+	sb	$t7, ($t0)
+	sb	$t7, 2($t0)
 	
 	# @@@@@@@@@@@@@@@
 	
 	addiu	$s4, $s4, 1 # x = x + 1
 	
 	# if x <= bigger of the x_b and x_e
-	ble	$s4, $t9, single_line_between_y2_y3
+	ble	$s4, $t9, single_line_between_y1_y2
 	
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -460,10 +463,14 @@ single_line_between_y2_y3:
 	
 	addu	$t0, $s0, $t0
 	 
-	sb	$t7, ($t0)	# A
+	#sb	$t7, ($t0)	# A
 	sb	$t7, 1($t0)	# R
 	sb	$t7, 2($t0)	# G
-	sb	$t7, 3($t0)	# B
+	#sb	$t7, 3($t0)	# B
+	
+	li	$t7, 255
+	sb	$t7, ($t0)
+	sb	$t7, 3($t0)
 	
 	# @@@@@@@@@@@@@@@
 	
