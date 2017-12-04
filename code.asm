@@ -536,8 +536,16 @@ between_y1_y2:
 drawing_lines_between_y1_y2:
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
-	sub	$t0, $s7, $s6 # x_e - x_b
-	sra	$t0, $t0, 16
+	move	$v0, $s6 # xp
+	sra	$v0, $v0, 16
+	
+	move	$v1, $s7 # xe
+	sra	$v1, $v1, 16
+	
+	sub	$t0, $v1, $v0 # int(x_e) - int(x_b)
+	
+	sll	$v0, $v0, 16 # int(xp)
+	sll	$v1, $v1, 16 # int(xe)
 	
 	li	$t6, 1
 	beqz	$t0, skip_div_xe_xb_1
@@ -551,13 +559,17 @@ skip_div_xe_xb_1:
 	# $t8 is the lower one of the $s6 and $s7
 	# $t9 is the bigger one of the $s6 and $s7
 	# removing shift by shifting to the right by 16
-	sra	$t8, $s6, 16 
+	sra	$t8, $s6, 16
 	sra	$t9, $s7, 16
+	#move	$v0, $s6
 	ble	$s6, $s7, skip_switch_in_y1_y2
 	sra	$t8, $s7, 16
 	sra	$t9, $s6, 16
+	#move	$v0, $s7
 	
 skip_switch_in_y1_y2:
+	#addi	$t8, $t8, 1
+	addi	$t9, $t9, -1
 	move	$s4, $t8 # x = lower of the x_b and x_e
 	
 single_line_between_y1_y2:
@@ -571,14 +583,22 @@ single_line_between_y1_y2:
 	# Calculating color
 	
 	sll	$t7, $s4, 16 # Shifting 'x' by 16 bit to the left, saving in $t7
+	#move	$t0, $t8
+	#sll	$t0, $t0, 16
+	#sub	$t7, $t7, $t8
+	
+	#sub	$t7, $s4, $t8 # x - int(xp)
+	#sll	$t7, $t7, 16
+	#add	$t7, $t7, $v0 # (x - int(xp)) + xp
 	
 	# A
 	
 	lw	$t4, c_A_p
 	lw	$t5, c_A_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -593,8 +613,9 @@ single_line_between_y1_y2:
 	lw	$t4, c_B_p
 	lw	$t5, c_B_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -608,8 +629,9 @@ single_line_between_y1_y2:
 	lw	$t4, c_G_p
 	lw	$t5, c_G_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -624,8 +646,9 @@ single_line_between_y1_y2:
 	lw	$t4, c_R_p
 	lw	$t5, c_R_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+			
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -831,8 +854,16 @@ between_y2_y3:
 drawing_lines_between_y2_y3:
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	sub	$t0, $s7, $s6 # x_e - x_b
-	sra	$t0, $t0, 16
+	move	$v0, $s6 # xp
+	sra	$v0, $v0, 16
+	
+	move	$v1, $s7 # xe
+	sra	$v1, $v1, 16
+	
+	sub	$t0, $v1, $v0 # int(x_e) - int(x_b)
+	
+	sll	$v0, $v0, 16 # int(xp)
+	sll	$v1, $v1, 16 # int(xe)
 	
 	li	$t6, 1
 	beqz	$t0, skip_div_xe_xb_2
@@ -851,6 +882,8 @@ skip_div_xe_xb_2:
 	sra	$t9, $s6, 16
 
 skip_switch_in_y2_y3:
+	#addi	$t8, $t8, 1
+	addi	$t9, $t9, -1
 	move	$s4, $t8 # x = lower of the x_b and x_e
 	
 single_line_between_y2_y3:	
@@ -865,14 +898,22 @@ single_line_between_y2_y3:
 	# Calculating color
 	
 	sll	$t7, $s4, 16 # Shifting 'x' by 16 bit to the left, saving in $t7
+	#move	$t0, $t8
+	#sll	$t0, $t0, 16
+	#sub	$t7, $t7, $t8
+	
+	#sub	$t7, $s4, $t8 # x - int(xp)
+	#sll	$t7, $t7, 16
+	#add	$t7, $t7, $v0 # (x - int(xp)) + xp
 	
 	# A
 	
 	lw	$t4, c_A_p
 	lw	$t5, c_A_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -887,8 +928,9 @@ single_line_between_y2_y3:
 	lw	$t4, c_B_p
 	lw	$t5, c_B_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -902,8 +944,9 @@ single_line_between_y2_y3:
 	lw	$t4, c_G_p
 	lw	$t5, c_G_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -918,8 +961,9 @@ single_line_between_y2_y3:
 	lw	$t4, c_R_p
 	lw	$t5, c_R_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+			
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -1007,8 +1051,16 @@ end_of_drawing:
 # @@@@@@@@@@@@@@@@@@@@@@@@@ OSTATNIA LINIJKA @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 	# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	sub	$t0, $s7, $s6 # x_e - x_b
-	sra	$t0, $t0, 16
+	move	$v0, $s6 # xp
+	sra	$v0, $v0, 16
+	
+	move	$v1, $s7 # xe
+	sra	$v1, $v1, 16
+	
+	sub	$t0, $v1, $v0 # int(x_e) - int(x_b)
+	
+	sll	$v0, $v0, 16 # int(xp)
+	sll	$v1, $v1, 16 # int(xe)
 	
 	li	$t6, 1
 	beqz	$t0, skip_div_xe_xb_3
@@ -1027,6 +1079,8 @@ skip_div_xe_xb_3:
 	sra	$t9, $s6, 16
 
 skip_switch_in_end:
+	#addi	$t8, $t8, 1
+	addi	$t9, $t9, -1
 	move	$s4, $t8 # x = lower of the x_b and x_e
 	
 single_line_end:	
@@ -1041,14 +1095,22 @@ single_line_end:
 	# Calculating color
 	
 	sll	$t7, $s4, 16 # Shifting 'x' by 16 bit to the left, saving in $t7
+	#move	$t0, $t8
+	#sll	$t0, $t0, 16
+	#sub	$t7, $t7, $t8
+	
+	#sub	$t7, $s4, $t8 # x - int(xp)
+	#sll	$t7, $t7, 16
+	#add	$t7, $t7, $v0 # (x - int(xp)) + xp
 	
 	# A
 	
 	lw	$t4, c_A_p
 	lw	$t5, c_A_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -1063,8 +1125,9 @@ single_line_end:
 	lw	$t4, c_B_p
 	lw	$t5, c_B_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -1078,8 +1141,9 @@ single_line_end:
 	lw	$t4, c_G_p
 	lw	$t5, c_G_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
@@ -1094,8 +1158,9 @@ single_line_end:
 	lw	$t4, c_R_p
 	lw	$t5, c_R_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
-		
-	sub	$t0, $t7, $s6 # (x - xp) - shifted
+			
+	sub	$t0, $t7, $v0 # (x - xp) - shifted
+			
 	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
 	mfhi	$t0 # not shifted
 	
