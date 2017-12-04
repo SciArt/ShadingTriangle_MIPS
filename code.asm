@@ -363,6 +363,19 @@ between_y1_y2:
 	
 	# For [A]lpha:
 	
+	lbu	$t4, 8($t1) # A1 - not shifted	
+	lbu	$t5, 8($t3) # A3 - not shifted
+		
+	sub	$t7, $t5, $t4 # A3 - A1 - not shifted
+		
+	lw	$t4, 4($t1) # y1 - not shifted
+	lw	$t5, 4($t3) # y3 - not shifted
+	sub	$t6, $t5, $t4 # y3 - y1 - not shifted
+	
+	sll	$t7, $t7, 16 # (A3-A1) - shifted
+	div	$t0, $t7, $t6 # (A3-A1)/(y3-y1) - shifted
+	sw	$t0, l_A_p # shifted
+	
 	# For [R]ed:
 	
 	lbu	$t4, 9($t1) # R1 - not shifted	
@@ -380,12 +393,42 @@ between_y1_y2:
 		
 	# For [G]reen:
 	
+	lbu	$t4, 10($t1) # G1 - not shifted	
+	lbu	$t5, 10($t3) # G3 - not shifted
+		
+	sub	$t7, $t5, $t4 # G3 - G1 - not shifted
+		
+	lw	$t4, 4($t1) # y1 - not shifted
+	lw	$t5, 4($t3) # y3 - not shifted
+	sub	$t6, $t5, $t4 # y3 - y1 - not shifted
+	
+	sll	$t7, $t7, 16 # (G3-G1) - shifted
+	div	$t0, $t7, $t6 # (G3-G1)/(y3-y1) - shifted
+	sw	$t0, l_G_p # shifted
+	
 	# For [B]lue:	
+	
+	lbu	$t4, 11($t1) # B1 - not shifted	
+	lbu	$t5, 11($t3) # B3 - not shifted
+		
+	sub	$t7, $t5, $t4 # B3 - B1 - not shifted
+		
+	lw	$t4, 4($t1) # y1 - not shifted
+	lw	$t5, 4($t3) # y3 - not shifted
+	sub	$t6, $t5, $t4 # y3 - y1 - not shifted
+	
+	sll	$t7, $t7, 16 # (B3-B1) - shifted
+	div	$t0, $t7, $t6 # (B3-B1)/(y3-y1) - shifted
+	sw	$t0, l_B_p # shifted
 	
 	# @@@@@@@@@@@@@@@@@@@@ END OF CALCULATING COLOR DIFFERENCES @@@@@@@@@@@@@@@@@@@@@@@@
 	# @@@@@@@@@@@@@@@@@@@ COLOR c_*_p and c_*_e 
 	
 	# A
+	lbu	$t0, 8($t1) # A1
+	sll	$t0, $t0, 16 # A1 shifted
+	sw	$t0, c_A_p # store A1 shifted
+	sw	$t0, c_A_e # store A1 shifted	
 	
 	# R
 	lbu	$t0, 9($t1) # R1
@@ -394,8 +437,16 @@ between_y1_y2:
 	sw	$t0, c_R_e # store R1 shifted
 	
 	# G
+	lbu	$t0, 10($t1) # G1
+	sll	$t0, $t0, 16 # G1 shifted
+	sw	$t0, c_G_p # store G1 shifted
+	sw	$t0, c_G_e # store G1 shifted	
 	
 	# B
+	lbu	$t0, 11($t1) # B1
+	sll	$t0, $t0, 16 # B1 shifted
+	sw	$t0, c_B_p # store B1 shifted
+	sw	$t0, c_B_e # store B1 shifted	
 	
 	# @@@@@@@@@@@@@@@@@@@ END OF COLOR c_*_p and c_*_e
 	
@@ -425,6 +476,18 @@ between_y1_y2:
 	
 	# For [A]lpha:
 	
+	lbu	$t4, 8($t1) # A1
+	lbu	$t5, 8($t2) # A2
+	sub	$t7, $t5, $t4	# A2 - A1
+	
+	lw	$t4, 4($t1) # y1
+	lw	$t5, 4($t2) # y2
+	sub	$t6, $t5, $t4	# y2 - y1
+	
+	sll	$t7, $t7, 16	# Shift (A2-A1) by 16 bits
+	div	$t0, $t7, $t6	# (A2-A1)/(y2-y1)
+	sw	$t0, l_A_e
+	
 	# For [R]ed:
 	
 	lbu	$t4, 9($t1) # R1
@@ -441,7 +504,31 @@ between_y1_y2:
 	
 	# For [G]reen:
 	
+	lbu	$t4, 10($t1) # G1
+	lbu	$t5, 10($t2) # G2
+	sub	$t7, $t5, $t4	# G2 - G1
+	
+	lw	$t4, 4($t1) # y1
+	lw	$t5, 4($t2) # y2
+	sub	$t6, $t5, $t4	# y2 - y1
+	
+	sll	$t7, $t7, 16	# Shift (G2-G1) by 16 bits
+	div	$t0, $t7, $t6	# (G2-G1)/(y2-y1)
+	sw	$t0, l_G_e
+	
 	# For [B]lue:
+	
+	lbu	$t4, 11($t1) # B1
+	lbu	$t5, 11($t2) # B2
+	sub	$t7, $t5, $t4	# B2 - B1
+	
+	lw	$t4, 4($t1) # y1
+	lw	$t5, 4($t2) # y2
+	sub	$t6, $t5, $t4	# y2 - y1
+	
+	sll	$t7, $t7, 16	# Shift (B2-B1) by 16 bits
+	div	$t0, $t7, $t6	# (B2-B1)/(y2-y1)
+	sw	$t0, l_B_e
 	
 	# @@@@@@@@@@@@@@@@@@@@ END OF CALCULATING COLOR DIFFERENCES @@@@@@@@@@@@@@@@@@@@@@@@	
 	
@@ -487,16 +574,49 @@ single_line_between_y1_y2:
 	
 	# A
 	
-	li	$t0, 255
+	lw	$t4, c_A_p
+	lw	$t5, c_A_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
 	sb	$t0, ($s1)
 	
 	# B
 	
-	li	$t0, 0
+	lw	$t4, c_B_p
+	lw	$t5, c_B_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
 	sb	$t0, 1($s1)
 	
 	# G
-	li	$t0, 0
+	lw	$t4, c_G_p
+	lw	$t5, c_G_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
 	sb	$t0, 2($s1)
 	
 	# R
@@ -535,6 +655,16 @@ single_line_between_y1_y2:
 		
 	# A
 	
+	lw	$t0, l_A_p
+	lw	$t7, c_A_p
+	add	$t7, $t7, $t0
+	sw	$t7, c_A_p
+	
+	lw	$t0, l_A_e
+	lw	$t7, c_A_e
+	add	$t7, $t7, $t0
+	sw	$t7, c_A_e
+	
 	# R
 	lw	$t0, l_R_p
 	lw	$t7, c_R_p
@@ -548,7 +678,27 @@ single_line_between_y1_y2:
 	
 	# G
 	
+	lw	$t0, l_G_p
+	lw	$t7, c_G_p
+	add	$t7, $t7, $t0
+	sw	$t7, c_G_p
+	
+	lw	$t0, l_G_e
+	lw	$t7, c_G_e
+	add	$t7, $t7, $t0
+	sw	$t7, c_G_e
+	
 	# B
+	
+	lw	$t0, l_B_p
+	lw	$t7, c_B_p
+	add	$t7, $t7, $t0
+	sw	$t7, c_B_p
+	
+	lw	$t0, l_B_e
+	lw	$t7, c_B_e
+	add	$t7, $t7, $t0
+	sw	$t7, c_B_e
 	
 	# @@@@@@@ END OF CALCULATING COLORS
 	
@@ -591,6 +741,20 @@ between_y2_y3:
 	
 	# For [A]lpha:
 	
+	lbu	$t4, 8($t2) # A2
+	lbu	$t5, 8($t3) # A3
+		
+	sub	$t7, $t5, $t4	# A3 - A2
+		
+	lw	$t4, 4($t2) # y2
+	lw	$t5, 4($t3) # y3
+	
+	sub	$t6, $t5, $t4	# y3 - y2
+		
+	sll	$t7, $t7, 16	# Shift (A3-A2) by 16 bits
+	div	$t0, $t7, $t6	# (A3-A2)/(y3-y2)
+	sw	$t0, l_A_e
+	
 	# For [R]ed:
 	
 	lbu	$t4, 9($t2) # R2
@@ -609,12 +773,43 @@ between_y2_y3:
 		
 	# For [G]reen:
 	
+	lbu	$t4, 10($t2) # G2
+	lbu	$t5, 10($t3) # G3
+		
+	sub	$t7, $t5, $t4	# G3 - G2
+		
+	lw	$t4, 4($t2) # y2
+	lw	$t5, 4($t3) # y3
+	
+	sub	$t6, $t5, $t4	# y3 - y2
+		
+	sll	$t7, $t7, 16	# Shift (G3-G2) by 16 bits
+	div	$t0, $t7, $t6	# (G3-G2)/(y3-y2)
+	sw	$t0, l_G_e
+	
 	# For [B]lue:
+	
+	lbu	$t4, 11($t2) # B2
+	lbu	$t5, 11($t3) # B3
+		
+	sub	$t7, $t5, $t4	# B3 - B2
+		
+	lw	$t4, 4($t2) # y2
+	lw	$t5, 4($t3) # y3
+	
+	sub	$t6, $t5, $t4	# y3 - y2
+		
+	sll	$t7, $t7, 16	# Shift (B3-B2) by 16 bits
+	div	$t0, $t7, $t6	# (B3-B2)/(y3-y2)
+	sw	$t0, l_B_e
 	
 	# @@@@@@@@@@@@@@@@@@@@ END OF CALCULATING COLOR DIFFERENCES @@@@@@@@@@@@@@@@@@@@@@@@
 	# @@@@@@@@@@@@@@@@@@@@ c_*_e @@@@@@@@@@@@@@@@@
 	
 	# A
+	lbu	$t0, 8($t2)
+	sll	$t0, $t0, 16
+	sw	$t0, c_A_e	
 	
 	# R
 	lbu	$t0, 9($t2)
@@ -622,8 +817,14 @@ between_y2_y3:
 	sw	$t0, c_R_e
 	
 	# G
+	lbu	$t0, 10($t2)
+	sll	$t0, $t0, 16
+	sw	$t0, c_G_e
 	
 	# B
+	lbu	$t0, 11($t2)
+	sll	$t0, $t0, 16
+	sw	$t0, c_B_e
 	
 	# @@@@@@@@@@@@@@@@@@@@ end of c_*e @@@@@@@@@@@
 		
@@ -667,20 +868,53 @@ single_line_between_y2_y3:
 	
 	# A
 	
-	li	$t0, 255
+	lw	$t4, c_A_p
+	lw	$t5, c_A_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
 	sb	$t0, ($s1)
 	
 	# B
 	
-	li	$t0, 0
+	lw	$t4, c_B_p
+	lw	$t5, c_B_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
 	sb	$t0, 1($s1)
 	
 	# G
-	li	$t0, 0
+	lw	$t4, c_G_p
+	lw	$t5, c_G_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
 	sb	$t0, 2($s1)
 	
 	# R
-	
+				
 	lw	$t4, c_R_p
 	lw	$t5, c_R_e
 	sub	$t5, $t5, $t4 # (ce - cp) - shifted
@@ -692,8 +926,8 @@ single_line_between_y2_y3:
 	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
 	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
 	sra	$t0, $t0, 16
-	
-	sb	$t0, 3($s1) # Saving color
+		
+	sb	$t0, 3($s1)
 	
 	
 	addiu	$s4, $s4, 1 # x = x + 1
@@ -715,21 +949,50 @@ single_line_between_y2_y3:
 		
 	# A
 	
+	lw	$t0, l_A_p
+	lw	$t7, c_A_p
+	add	$t7, $t7, $t0
+	sw	$t7, c_A_p
+	
+	lw	$t0, l_A_e
+	lw	$t7, c_A_e
+	add	$t7, $t7, $t0
+	sw	$t7, c_A_e
+	
 	# R
 	lw	$t0, l_R_p
 	lw	$t7, c_R_p
 	add	$t7, $t7, $t0
-	sw	$t7, c_R_p	
+	sw	$t7, c_R_p
 	
 	lw	$t0, l_R_e
 	lw	$t7, c_R_e
 	add	$t7, $t7, $t0
 	sw	$t7, c_R_e
 	
-	
 	# G
 	
+	lw	$t0, l_G_p
+	lw	$t7, c_G_p
+	add	$t7, $t7, $t0
+	sw	$t7, c_G_p
+	
+	lw	$t0, l_G_e
+	lw	$t7, c_G_e
+	add	$t7, $t7, $t0
+	sw	$t7, c_G_e
+	
 	# B
+	
+	lw	$t0, l_B_p
+	lw	$t7, c_B_p
+	add	$t7, $t7, $t0
+	sw	$t7, c_B_p
+	
+	lw	$t0, l_B_e
+	lw	$t7, c_B_e
+	add	$t7, $t7, $t0
+	sw	$t7, c_B_e
 	
 	# @@@@@@@ END OF CALCULATING COLORS
 	
