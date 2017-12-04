@@ -595,12 +595,14 @@ between_y2_y3:
 	
 	lbu	$t4, 9($t2) # R2
 	lbu	$t5, 9($t3) # R3
+		
 	sub	$t7, $t5, $t4	# R3 - R2
-	
+		
 	lw	$t4, 4($t2) # y2
 	lw	$t5, 4($t3) # y3
-	sub	$t6, $t5, $t4	# y3 - y2
 	
+	sub	$t6, $t5, $t4	# y3 - y2
+		
 	sll	$t7, $t7, 16	# Shift (R3-R2) by 16 bits
 	div	$t0, $t7, $t6	# (R3-R2)/(y3-y2)
 	sw	$t0, l_R_e
@@ -717,10 +719,13 @@ single_line_between_y2_y3:
 	lw	$t0, l_R_p
 	lw	$t7, c_R_p
 	add	$t7, $t7, $t0
+	sw	$t7, c_R_p	
 	
 	lw	$t0, l_R_e
 	lw	$t7, c_R_e
 	add	$t7, $t7, $t0
+	sw	$t7, c_R_e
+	
 	
 	# G
 	
