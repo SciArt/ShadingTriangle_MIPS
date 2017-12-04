@@ -1007,7 +1007,16 @@ end_of_drawing:
 # @@@@@@@@@@@@@@@@@@@@@@@@@ OSTATNIA LINIJKA @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 	# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	sub	$t0, $s7, $s6 # x_e - x_b
+	sra	$t0, $t0, 16
 	
+	li	$t6, 1
+	beqz	$t0, skip_div_xe_xb_3
+	
+	li	$t4, 1
+	sll	$t4, $t4, 16
+	div	$t6, $t4, $t0 # 1 / (x_e - x_b), it is shifted by 16 bit to the left
+skip_div_xe_xb_3:
 	# $t8 is the lower one of the $s6 and $s7
 	# $t9 is the bigger one of the $s6 and $s7
 	# removing shift by shifting to the right by 16
@@ -1022,29 +1031,79 @@ skip_switch_in_end:
 	
 single_line_end:	
 	
-	# @@@@@@@@@@@@@@@
-	# ZAPIS PIKSELA DO PAMIĘCI NA STOSIE
+	# $s1 - place for pixel on heap
+	mul	$s1, $s5, $s2	# y * width	
+	add	$s1, $s1, $s4	# y * width + x
+	sll	$s1, $s1, 2	# 4*(y*width + x)
 	
-	mul	$t0, $s5, $s2	# y * width	
-	add	$t0, $t0, $s4	# y * width + x
-	sll	$t0, $t0, 2	# 4*(y*width + x)
+	addu	$s1, $s0, $s1
 	
-	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
-	li	$t7, 0		# TEMPORARY FOR BLACK COLOR
-	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
+	# Calculating color
 	
-	addu	$t0, $s0, $t0
-	 
-	sb	$t7, ($t0)	# A
-	sb	$t7, 1($t0)	# R
-	sb	$t7, 2($t0)	# G
-	sb	$t7, 3($t0)	# B
+	sll	$t7, $s4, 16 # Shifting 'x' by 16 bit to the left, saving in $t7
 	
-	#li	$t7, 255
-	#sb	$t7, ($t0)
-	#sb	$t7, 3($t0)
-
-	# @@@@@@@@@@@@@@@
+	# A
+	
+	lw	$t4, c_A_p
+	lw	$t5, c_A_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
+	sb	$t0, ($s1)
+	
+	# B
+	
+	lw	$t4, c_B_p
+	lw	$t5, c_B_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
+	sb	$t0, 1($s1)
+	
+	# G
+	lw	$t4, c_G_p
+	lw	$t5, c_G_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
+	sb	$t0, 2($s1)
+	
+	# R
+				
+	lw	$t4, c_R_p
+	lw	$t5, c_R_e
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
+	
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
+	sb	$t0, 3($s1)
 	
 	addiu	$s4, $s4, 1 # x = x + 1
 	
