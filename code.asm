@@ -44,10 +44,10 @@ c_G_e:		.space	4
 c_B_e:		.space	4
 
 # Space for current color value for current (x,y)
-c_A:		.space	1
-c_R:		.space	1
-c_G:		.space	1
-c_B:		.space	1
+#c_A:		.space	1
+#c_R:		.space	1
+#c_G:		.space	1
+#c_B:		.space	1
 
 bitmap:		.ascii "BM"
 
@@ -62,6 +62,8 @@ error:		.asciiz "Cannot open BMP file"
 prompt4:	.asciiz "\nEnter the data of the 1. verticle:\n(format: [X][Y][A][R][G][B])\n"
 prompt5:	.asciiz "\nEnter the data of the 2. verticle:\n(format: [X][Y][A][R][G][B])\n"
 prompt6:	.asciiz "\nEnter the data of the 3. verticle:\n(format: [X][Y][A][R][G][B])\n"
+
+prompt_check:	.asciiz "\nObliczone:\n"
 
 .text
 .globl	main
@@ -363,14 +365,19 @@ between_y1_y2:
 	
 	# For [R]ed:
 	
-	lb	$t4, 9($t1) # R1
-	lb	$t5, 9($t3) # R3
-	sub	$t7, $t5, $t4	# R3 - R1
+	lbu	$t4, 9($t1) # R1 - not shifted	
+	lbu	$t5, 9($t3) # R3 - not shifted
+		
+	sub	$t7, $t5, $t4 # R3 - R1 - not shifted
+		
+	lw	$t4, 4($t1) # y1 - not shifted
+	lw	$t5, 4($t3) # y3 - not shifted
+	sub	$t6, $t5, $t4 # y3 - y1 - not shifted
 	
-	sll	$t7, $t7, 16	# Shift (R3-R1) by 16 bits
-	div	$t0, $t7, $t6	# (R3-R1)/(y3-y1)
-	sw	$t0, l_R_p
-	
+	sll	$t7, $t7, 16 # (R3-R1) - shifted
+	div	$t0, $t7, $t6 # (R3-R1)/(y3-y1) - shifted
+	sw	$t0, l_R_p # shifted
+		
 	# For [G]reen:
 	
 	# For [B]lue:	
@@ -381,10 +388,10 @@ between_y1_y2:
 	# A
 	
 	# R
-	lb	$t0, 9($t1)
-	sll	$t0, $t0, 16
-	sw	$t0, c_R_p
-	sw	$t0, c_R_e
+	lbu	$t0, 9($t1) # R1
+	sll	$t0, $t0, 16 # R1 shifted
+	sw	$t0, c_R_p # store R1 shifted
+	sw	$t0, c_R_e # store R1 shifted
 	
 	# G
 	
@@ -420,13 +427,17 @@ between_y1_y2:
 	
 	# For [R]ed:
 	
-	lb	$t4, 9($t1) # R1
-	lb	$t5, 9($t2) # R2
+	lbu	$t4, 9($t1) # R1
+	lbu	$t5, 9($t2) # R2
 	sub	$t7, $t5, $t4	# R2 - R1
+	
+	lw	$t4, 4($t1) # y1
+	lw	$t5, 4($t2) # y2
+	sub	$t6, $t5, $t4	# y2 - y1
 	
 	sll	$t7, $t7, 16	# Shift (R2-R1) by 16 bits
 	div	$t0, $t7, $t6	# (R2-R1)/(y2-y1)
-	sw	$t0, l_R_p
+	sw	$t0, l_R_e
 	
 	# For [G]reen:
 	
@@ -489,39 +500,19 @@ single_line_between_y1_y2:
 	sb	$t0, 2($s1)
 	
 	# R
-	# @@@@ TEST
-	li	$t4, 200
-	li	$t5, 50
-	sll	$t4, $t4, 16
-	sll	$t5, $t5, 16
-	sw	$t4, c_R_p
-	sw	$t5, c_R_e
-	# @@@@ END OF TEST
-	# (ce - cp) * (x - xp)
+				
 	lw	$t4, c_R_p
 	lw	$t5, c_R_e
-	sub	$t5, $t5, $t4
-	
-	sra	$t0, $s6, 16
-	sub	$t0, $s4, $t0
-	#sub	$t0, $t7, $s6
-	#sra	$t0, $t0, 16 # This are just pixels, it should not be a fraction
-	
-	mul	$t0, $t5, $t0
-	
-	# (ce - cp) * (x - xp) / (xe - xp)
-	#sra	$t0, $t0, 16
-	#mul	$t0, $t0, $t6
-	
-	mul	$t0, $t0, $t6
-	mfhi	$t0
-	sra	$t4, $t4, 16
-	add	$t0, $t0, $t4
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
 		
-	# +cp
-	#add	$t0, $t0, $t4
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
 	
-	#sra	$t0, $t0, 16
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
+	sra	$t0, $t0, 16
+		
 	sb	$t0, 3($s1)
 	
 	
@@ -602,14 +593,18 @@ between_y2_y3:
 	
 	# For [R]ed:
 	
-	lb	$t4, 9($t2) # R2
-	lb	$t5, 9($t3) # R3
+	lbu	$t4, 9($t2) # R2
+	lbu	$t5, 9($t3) # R3
 	sub	$t7, $t5, $t4	# R3 - R2
+	
+	lw	$t4, 4($t2) # y2
+	lw	$t5, 4($t3) # y3
+	sub	$t6, $t5, $t4	# y3 - y2
 	
 	sll	$t7, $t7, 16	# Shift (R3-R2) by 16 bits
 	div	$t0, $t7, $t6	# (R3-R2)/(y3-y2)
 	sw	$t0, l_R_e
-	
+		
 	# For [G]reen:
 	
 	# For [B]lue:
@@ -620,7 +615,7 @@ between_y2_y3:
 	# A
 	
 	# R
-	lb	$t0, 9($t2)
+	lbu	$t0, 9($t2)
 	sll	$t0, $t0, 16
 	sw	$t0, c_R_e
 	
@@ -683,33 +678,20 @@ single_line_between_y2_y3:
 	sb	$t0, 2($s1)
 	
 	# R
-	# @@@@ TEST
-	li	$t4, 200
-	li	$t5, 50
-	sll	$t4, $t4, 16
-	sll	$t5, $t5, 16
-	sw	$t4, c_R_p
-	sw	$t5, c_R_e
-	# @@@@ END OF TEST
-	# (ce - cp) * (x - xp)
+	
 	lw	$t4, c_R_p
 	lw	$t5, c_R_e
-	sub	$t5, $t5, $t4
+	sub	$t5, $t5, $t4 # (ce - cp) - shifted
+		
+	sub	$t0, $t7, $s6 # (x - xp) - shifted
+	mul	$t0, $t5, $t0 # (ce - cp) * (x - xp) - shifted by 32
+	mfhi	$t0 # not shifted
 	
-	sub	$t0, $t7, $s6
-	sra	$t0, $t0, 16 # This are just pixels, it should not be a fraction
-	
-	mul	$t0, $t5, $t0
-	
-	# (ce - cp) * (x - xp) / (xe - xp)
+	mul	$t0, $t0, $t6 # (ce - cp) * (x - xp) / (xe - xp) - shifted
+	add	$t0, $t4, $t0 # cp + (ce - cp) * (x - xp) / (xe - xp) - shifted
 	sra	$t0, $t0, 16
-	mul	$t0, $t0, $t6
-	# +cp
-	add	$t0, $t0, $t4
 	
-	sra	$t0, $t0, 16
-	sb	$t0, 3($s1)
-	
+	sb	$t0, 3($s1) # Saving color
 	
 	
 	addiu	$s4, $s4, 1 # x = x + 1
