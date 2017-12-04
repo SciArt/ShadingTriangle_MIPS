@@ -569,7 +569,7 @@ skip_div_xe_xb_1:
 	
 skip_switch_in_y1_y2:
 	#addi	$t8, $t8, 1
-	addi	$t9, $t9, -1
+	#addi	$t9, $t9, -1
 	move	$s4, $t8 # x = lower of the x_b and x_e
 	
 single_line_between_y1_y2:
@@ -883,7 +883,7 @@ skip_div_xe_xb_2:
 
 skip_switch_in_y2_y3:
 	#addi	$t8, $t8, 1
-	addi	$t9, $t9, -1
+	#addi	$t9, $t9, -1
 	move	$s4, $t8 # x = lower of the x_b and x_e
 	
 single_line_between_y2_y3:	
@@ -1080,7 +1080,7 @@ skip_div_xe_xb_3:
 
 skip_switch_in_end:
 	#addi	$t8, $t8, 1
-	addi	$t9, $t9, -1
+	#addi	$t9, $t9, -1
 	move	$s4, $t8 # x = lower of the x_b and x_e
 	
 single_line_end:	
