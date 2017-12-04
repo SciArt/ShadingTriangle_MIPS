@@ -43,6 +43,12 @@ c_R_e:		.space	4
 c_G_e:		.space	4
 c_B_e:		.space	4
 
+# Space for current color value for current (x,y)
+c_A:		.space	1
+c_R:		.space	1
+c_G:		.space	1
+c_B:		.space	1
+
 bitmap:		.ascii "BM"
 
 input_file:	.asciiz	"input.bmp"
@@ -300,6 +306,8 @@ check_t2_t3:
 	move	$t2, $t3
 	move	$t3, $t0
 	
+begin_of_drawing:
+	
 	#Check sorting
 	li	$v0, 1
 	lw	$t0, 4($t1)
@@ -315,8 +323,7 @@ check_t2_t3:
 	lw	$t0, 4($t3)
 	la	$a0, ($t0)
 	syscall
-begin_of_drawing:
-
+	
 # $s4 - current x
 # $s5 - current y
 # $s6 - x_b ... x_begin, but it is more like x13
@@ -431,13 +438,17 @@ between_y1_y2:
 drawing_lines_between_y1_y2:
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
-	#sub	$t0, $s7, $s6 # x_e - x_b
-	#sra	$t0, $t0, 16
-	#li	$t4, 1
-	#sll	$t4, $t4, 16
+	sub	$t0, $s7, $s6 # x_e - x_b
+	sra	$t0, $t0, 16
 	
-	#div	$t6, $t4, $t0 # 1 / (x_e - x_b)
-
+	li	$t6, 1
+	beqz	$t0, skip_div_xe_xb_1
+	
+	li	$t4, 1
+	sll	$t4, $t4, 16
+	div	$t6, $t4, $t0 # 1 / (x_e - x_b), it is shifted by 16 bit to the left
+skip_div_xe_xb_1:
+	
 	# $t6 = 1 / (x_e - x_b)
 	# $t8 is the lower one of the $s6 and $s7
 	# $t9 is the bigger one of the $s6 and $s7
@@ -452,43 +463,67 @@ skip_switch_in_y1_y2:
 	move	$s4, $t8 # x = lower of the x_b and x_e
 	
 single_line_between_y1_y2:
+	# $s1 - place for pixel on heap
+	mul	$s1, $s5, $s2	# y * width	
+	add	$s1, $s1, $s4	# y * width + x
+	sll	$s1, $s1, 2	# 4*(y*width + x)
+	
+	addu	$s1, $s0, $s1
 	
 	# Calculating color
 	
+	sll	$t7, $s4, 16 # Shifting 'x' by 16 bit to the left, saving in $t7
+	
 	# A
 	
-	# R
-	
-	
-	# G
+	li	$t0, 255
+	sb	$t0, ($s1)
 	
 	# B
 	
+	li	$t0, 0
+	sb	$t0, 1($s1)
+	
+	# G
+	li	$t0, 0
+	sb	$t0, 2($s1)
+	
+	# R
+	# @@@@ TEST
+	li	$t4, 200
+	li	$t5, 50
+	sll	$t4, $t4, 16
+	sll	$t5, $t5, 16
+	sw	$t4, c_R_p
+	sw	$t5, c_R_e
+	# @@@@ END OF TEST
+	# (ce - cp) * (x - xp)
+	lw	$t4, c_R_p
+	lw	$t5, c_R_e
+	sub	$t5, $t5, $t4
+	
+	sra	$t0, $s6, 16
+	sub	$t0, $s4, $t0
+	#sub	$t0, $t7, $s6
+	#sra	$t0, $t0, 16 # This are just pixels, it should not be a fraction
+	
+	mul	$t0, $t5, $t0
+	
+	# (ce - cp) * (x - xp) / (xe - xp)
+	#sra	$t0, $t0, 16
+	#mul	$t0, $t0, $t6
+	
+	mul	$t0, $t0, $t6
+	mfhi	$t0
+	sra	$t4, $t4, 16
+	add	$t0, $t0, $t4
 		
+	# +cp
+	#add	$t0, $t0, $t4
 	
-	# @@@@@@@@@@@@@@@
-	# ZAPIS PIKSELA DO PAMIĘCI NA STOSIE
+	#sra	$t0, $t0, 16
+	sb	$t0, 3($s1)
 	
-	mul	$t0, $s5, $s2	# y * width	
-	add	$t0, $t0, $s4	# y * width + x
-	sll	$t0, $t0, 2	# 4*(y*width + x)
-	
-	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
-	li	$t7, 0		# TEMPORARY FOR BLACK COLOR
-	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
-	
-	addu	$t0, $s0, $t0
-	
-	#sb	$t7, ($t0)	# A
-	sb	$t7, 1($t0)	# R
-	#sb	$t7, 2($t0)	# G
-	sb	$t7, 3($t0)	# B
-	
-	li	$t7, 255
-	sb	$t7, ($t0)
-	sb	$t7, 2($t0)
-	
-	# @@@@@@@@@@@@@@@
 	
 	addiu	$s4, $s4, 1 # x = x + 1
 	
@@ -528,7 +563,7 @@ single_line_between_y1_y2:
 	
 	addiu	$s5, $s5, 1 # y = y + 1
 	
-	# If y <= y2 -> jump to "drawing_lines_between_y1_y2"
+	# If y < y2 -> jump to "drawing_lines_between_y1_y2"
 	lw	$t0, 4($t2) # y2
 	blt	$s5, $t0, drawing_lines_between_y1_y2
 		
@@ -539,9 +574,10 @@ between_y2_y3:
 	lw	$t5, 4($t3) # y3
 	beq	$t4, $t5, end_of_drawing
 	
+	# It doesn't quite work... x_b has good value, I don't know why I've written this
 	# x_b = x_b - d_x13 # I should do the same for color	
-	lw	$t0, diff_ratio
-	sub	$s6, $s6, $t0
+	# lw	$t0, diff_ratio
+	# sub	$s6, $s6, $t0
 	
 	# Calculating dx23 (current dx_e)
 	sub	$t6, $t5, $t4	# y3 - y2
@@ -597,7 +633,16 @@ between_y2_y3:
 drawing_lines_between_y2_y3:
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	sub	$t0, $s7, $s6 # x_e - x_b
+	sra	$t0, $t0, 16
 	
+	li	$t6, 1
+	beqz	$t0, skip_div_xe_xb_2
+	
+	li	$t4, 1
+	sll	$t4, $t4, 16
+	div	$t6, $t4, $t0 # 1 / (x_e - x_b), it is shifted by 16 bit to the left
+skip_div_xe_xb_2:
 	# $t8 is the lower one of the $s6 and $s7
 	# $t9 is the bigger one of the $s6 and $s7
 	# removing shift by shifting to the right by 16
@@ -612,29 +657,60 @@ skip_switch_in_y2_y3:
 	
 single_line_between_y2_y3:	
 	
-	# @@@@@@@@@@@@@@@
-	# ZAPIS PIKSELA DO PAMIĘCI NA STOSIE
+	# $s1 - place for pixel on heap
+	mul	$s1, $s5, $s2	# y * width	
+	add	$s1, $s1, $s4	# y * width + x
+	sll	$s1, $s1, 2	# 4*(y*width + x)
 	
-	mul	$t0, $s5, $s2	# y * width	
-	add	$t0, $t0, $s4	# y * width + x
-	sll	$t0, $t0, 2	# 4*(y*width + x)
+	addu	$s1, $s0, $s1
 	
-	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
-	li	$t7, 0		# TEMPORARY FOR BLACK COLOR
-	# @@@@@@ TEMPORARY @@@@@@@@@@@@@@@@@
+	# Calculating color
 	
-	addu	$t0, $s0, $t0
-	 
-	#sb	$t7, ($t0)	# A
-	sb	$t7, 1($t0)	# R
-	sb	$t7, 2($t0)	# G
-	#sb	$t7, 3($t0)	# B
+	sll	$t7, $s4, 16 # Shifting 'x' by 16 bit to the left, saving in $t7
 	
-	li	$t7, 255
-	sb	$t7, ($t0)
-	sb	$t7, 3($t0)
+	# A
 	
-	# @@@@@@@@@@@@@@@
+	li	$t0, 255
+	sb	$t0, ($s1)
+	
+	# B
+	
+	li	$t0, 0
+	sb	$t0, 1($s1)
+	
+	# G
+	li	$t0, 0
+	sb	$t0, 2($s1)
+	
+	# R
+	# @@@@ TEST
+	li	$t4, 200
+	li	$t5, 50
+	sll	$t4, $t4, 16
+	sll	$t5, $t5, 16
+	sw	$t4, c_R_p
+	sw	$t5, c_R_e
+	# @@@@ END OF TEST
+	# (ce - cp) * (x - xp)
+	lw	$t4, c_R_p
+	lw	$t5, c_R_e
+	sub	$t5, $t5, $t4
+	
+	sub	$t0, $t7, $s6
+	sra	$t0, $t0, 16 # This are just pixels, it should not be a fraction
+	
+	mul	$t0, $t5, $t0
+	
+	# (ce - cp) * (x - xp) / (xe - xp)
+	sra	$t0, $t0, 16
+	mul	$t0, $t0, $t6
+	# +cp
+	add	$t0, $t0, $t4
+	
+	sra	$t0, $t0, 16
+	sb	$t0, 3($s1)
+	
+	
 	
 	addiu	$s4, $s4, 1 # x = x + 1
 	
@@ -672,7 +748,7 @@ single_line_between_y2_y3:
 	
 	addiu	$s5, $s5, 1 # y = y + 1
 	
-	# If y <= y3 -> jump to "drawing_lines_between_y2_y3"
+	# If y < y3 -> jump to "drawing_lines_between_y2_y3"
 	lw	$t0, 4($t3) # y3
 	blt	$s5, $t0, drawing_lines_between_y2_y3
 	
@@ -709,14 +785,14 @@ single_line_end:
 	
 	addu	$t0, $s0, $t0
 	 
-	#sb	$t7, ($t0)	# A
+	sb	$t7, ($t0)	# A
 	sb	$t7, 1($t0)	# R
 	sb	$t7, 2($t0)	# G
-	#sb	$t7, 3($t0)	# B
+	sb	$t7, 3($t0)	# B
 	
-	li	$t7, 255
-	sb	$t7, ($t0)
-	sb	$t7, 3($t0)
+	#li	$t7, 255
+	#sb	$t7, ($t0)
+	#sb	$t7, 3($t0)
 
 	# @@@@@@@@@@@@@@@
 	
@@ -756,7 +832,8 @@ save:
 	li	$v0, 15
 	move	$a0, $s6
 	la	$a1, ($s0)
-	move	$a2, $s1
+	lw	$a2, header+32
+	#move	$a2, $s1
 	syscall
 	
 	# closing file
