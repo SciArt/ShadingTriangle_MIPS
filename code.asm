@@ -661,8 +661,8 @@ single_line_between_y1_y2:
 	
 	addiu	$s4, $s4, 1 # x = x + 1
 	
-	# if x <= bigger of the x_b and x_e
-	ble	$s4, $t9, single_line_between_y1_y2
+	# if x < bigger of the x_b and x_e
+	blt	$s4, $t9, single_line_between_y1_y2
 	
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -976,8 +976,8 @@ single_line_between_y2_y3:
 	
 	addiu	$s4, $s4, 1 # x = x + 1
 	
-	# if x <= bigger of the x_b and x_e
-	ble	$s4, $t9, single_line_between_y2_y3
+	# if x < bigger of the x_b and x_e
+	blt	$s4, $t9, single_line_between_y2_y3
 	
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
@@ -1172,8 +1172,8 @@ single_line_end:
 	
 	addiu	$s4, $s4, 1 # x = x + 1
 	
-	# if x <= bigger of the x_b and x_e
-	ble	$s4, $t9, single_line_end
+	# if x < bigger of the x_b and x_e
+	blt	$s4, $t9, single_line_end
 # @@@@@@@@@@@@@@@@@@@@@@@ KONIEC RYSOWANIA OSTATNIEJ LINIJKI @@@@@@@@@@@@@@@
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
