@@ -49,10 +49,14 @@ c_B_e:		.space	4
 #c_G:		.space	1
 #c_B:		.space	1
 
+input:		.space	256
+
 bitmap:		.ascii "BM"
 
 input_file:	.asciiz	"input.bmp"
 output_file:	.asciiz	"output.bmp"
+
+prompt0:	.asciiz "\nEnter filename:\n"
 
 prompt1:	.asciiz	"Bitmap properties:\nAmount of pixels*4: "
 prompt2:	.asciiz	"\nWidth in pixels: "
@@ -63,16 +67,35 @@ prompt4:	.asciiz "\nEnter the data of the 1. verticle:\n(format: [X][Y][A][R][G]
 prompt5:	.asciiz "\nEnter the data of the 2. verticle:\n(format: [X][Y][A][R][G][B])\n"
 prompt6:	.asciiz "\nEnter the data of the 3. verticle:\n(format: [X][Y][A][R][G][B])\n"
 
-prompt_check:	.asciiz "\nObliczone:\n"
+#prompt_check:	.asciiz "\nCheck:\n"
 
 .text
 .globl	main
 
 main:
+	# load input filename
+	li	$v0, 4	# print string
+	la	$a0, prompt0
+	syscall
+	li	$v0, 8 # read string
+	la	$a0, input
+	li	$a1, 256
+	syscall
+	
+	# remove trailing newline
+  	li $a3, '\n'
+newlineloop:
+	beqz 	$a1, newlineloopend
+	subu 	$a1, $a1, 1
+	lb 	$a2, input($a1)
+	bne 	$a2, $a3, newlineloop
+	li 	$a3, 0
+	sb 	$a3, input($a1)
+newlineloopend: 
 	
 	# opening the bitmap file (input_file)
 	li	$v0, 13
-	la	$a0, input_file
+	la	$a0, input
 	li	$a1, 0	# read flag
 	li	$a2, 0	# ignore mode
 	syscall
