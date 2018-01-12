@@ -2,22 +2,22 @@
 # $s2 - width in pixels
 # $s3 - height in pixels
 
-# VERTICLE
+# VERTEX
 # [X   ][Y   ][A][R][G][B]
 # 4 bytes, 4 bytes, 1 byte, 1 bytes, 1 bytes, 1 bytes
 # Size of the structure: 12 bytes
 
-# $t1 - address to 1. verticle
-# $t2 - address to 2. verticle
-# $t3 - address to 3. verticle
+# $t1 - address to 1. vertex
+# $t2 - address to 2. vertex
+# $t3 - address to 3. vertex
 
 
 .data
 # Header without first 2 bytes "BM"
 header:		.space	68
 
-# Space for 3 verticles
-verticles:	.space	36
+# Space for 3 vertices
+vertices:	.space	36
 
 # Space for dx_b, dx_e
 diff_ratio:	.space	8
@@ -63,9 +63,9 @@ prompt2:	.asciiz	"\nWidth in pixels: "
 prompt3:	.asciiz "\nHeight in pixels: "
 error:		.asciiz "Cannot open BMP file"
 
-prompt4:	.asciiz "\nEnter the data of the 1. verticle:\n(format: [X][Y][A][R][G][B])\n"
-prompt5:	.asciiz "\nEnter the data of the 2. verticle:\n(format: [X][Y][A][R][G][B])\n"
-prompt6:	.asciiz "\nEnter the data of the 3. verticle:\n(format: [X][Y][A][R][G][B])\n"
+prompt4:	.asciiz "\nEnter the data of the 1. vertex:\n(format: [X][Y][A][R][G][B])\n"
+prompt5:	.asciiz "\nEnter the data of the 2. vertex:\n(format: [X][Y][A][R][G][B])\n"
+prompt6:	.asciiz "\nEnter the data of the 3. vertex:\n(format: [X][Y][A][R][G][B])\n"
 
 #prompt_check:	.asciiz "\nCheck:\n"
 
@@ -166,9 +166,9 @@ newlineloopend:
 	syscall
 
 	
-	# loading verticles
+	# loading vertices
 	
-	# FIRST VERTICLE
+	# FIRST VERTEX
 	
 	li	$v0, 4	# print string
 	la	$a0, prompt4
@@ -177,34 +177,34 @@ newlineloopend:
 	# X
 	li	$v0, 5
 	syscall
-	sw	$v0, verticles
+	sw	$v0, vertices
 	
 	# Y
 	li	$v0, 5
 	syscall
-	sw	$v0, verticles+4
+	sw	$v0, vertices+4
 	
 	# A
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+8
+	sb	$v0, vertices+8
 	
 	# R
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+9
+	sb	$v0, vertices+9
 	
 	# G
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+10
+	sb	$v0, vertices+10
 	
 	# B
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+11
+	sb	$v0, vertices+11
 	
-	# SECOND VERTICLE
+	# SECOND VERTEX
 	
 	li	$v0, 4	# print string
 	la	$a0, prompt5
@@ -213,34 +213,34 @@ newlineloopend:
 	# X
 	li	$v0, 5
 	syscall
-	sw	$v0, verticles+12
+	sw	$v0, vertices+12
 	
 	# Y
 	li	$v0, 5
 	syscall
-	sw	$v0, verticles+16
+	sw	$v0, vertices+16
 	
 	# A
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+20
+	sb	$v0, vertices+20
 	
 	# R
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+21
+	sb	$v0, vertices+21
 	
 	# G
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+22
+	sb	$v0, vertices+22
 	
 	# B
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+23
+	sb	$v0, vertices+23
 	
-	# THIRD VERTICLE
+	# THIRD VERTEX
 	
 	li	$v0, 4	# print string
 	la	$a0, prompt6
@@ -249,32 +249,32 @@ newlineloopend:
 	# X
 	li	$v0, 5
 	syscall
-	sw	$v0, verticles+24
+	sw	$v0, vertices+24
 	
 	# Y
 	li	$v0, 5
 	syscall
-	sw	$v0, verticles+28
+	sw	$v0, vertices+28
 	
 	# A
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+32
+	sb	$v0, vertices+32
 	
 	# R
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+33
+	sb	$v0, vertices+33
 	
 	# G
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+34
+	sb	$v0, vertices+34
 	
 	# B
 	li	$v0, 5
 	syscall
-	sb	$v0, verticles+35
+	sb	$v0, vertices+35
 	
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -288,23 +288,23 @@ newlineloopend:
 #
 # $s0 - address of pixels data (on the heap)
 #
-# VERTICLE (12 bytes)
+# VERTEX (12 bytes)
 # [X   ][Y   ][A][R][G][B]
 # 4 bytes, 4 bytes, 1 byte, 1 bytes, 1 bytes, 1 bytes
 #
-# $t1 - address to 1. verticle // after sorting it is the verticle with the lowest "y"
-# $t2 - address to 2. verticle
-# $t3 - address to 3. verticle // after sorting it is the verticle with the highest "y"
+# $t1 - address to 1. vertex // after sorting it is the vertex with the lowest "y"
+# $t2 - address to 2. vertex
+# $t3 - address to 3. vertex // after sorting it is the vertex with the highest "y"
 #
 # diff_ratio (16 bytes)
 # each 4 bytes 
 # [dx_b] [dx_e] [dl_b] [dl_e]
 
-# sorting verticles from lowest to highest (according to the Y axis)
+# sorting vertices from lowest to highest (according to the Y axis)
 sort:
-	la	$t1, verticles
-	la	$t2, verticles+12
-	la	$t3, verticles+24
+	la	$t1, vertices
+	la	$t2, vertices+12
+	la	$t3, vertices+24
 	
 check_t1_t2:
 	lw	$t4, 4($t1)
