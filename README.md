@@ -1,7 +1,7 @@
 # Shading triangle - MIPS architecture
 
 Project for Computer Architecture at WUT.
-It's written in MARS (MIPS Assembler and Runtime Simulator).
+It's written in MARS (MIPS Assembler and Runtime Simulator). Fixed point numbers were used for calculations.
 
 ## Input
 - BMP file with its name, width and height.
